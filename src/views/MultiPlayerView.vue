@@ -3,6 +3,7 @@ import MainTable from "@/components/MainTable.vue"
 import { computed, reactive, toRefs, watch } from "vue";
 import Ably from 'ably'
 import { calculateWinner, generateUsername } from '@/helpers'
+import { clear } from "console";
 //Sorry i cant be bothered to separate the networking
 
 const username = generateUsername()
@@ -60,6 +61,17 @@ const createRoom = async () => {
 
     if (mpState.opponent) {
       channel.publish("joinSpectate", { username: msg.data.username })
+      if (mpState.gameStarted) {
+        channel.publish("gameUpdate", {
+          xIsNext: gameState.xIsNext,
+          nextGrid: gameState.nextGrid,
+          hoveredGrid: gameState.hoveredGrid,
+          wins: gameState.wins,
+          winner: gameState.winner,
+          history: gameState.history,
+          gridData: gridData
+        })
+      }
       console.log("[MP] Join spectate sent")
       return
     }
@@ -134,11 +146,33 @@ const joinRoom = () => {
       gridData.forEach((row, i) => row.splice(0, row.length, ...msg.data.gridData[i]))
       gameState.inputAllowed = !mpState.spectate && (IAmHost.value ? gameState.xIsNext : !gameState.xIsNext)
     })
+  })
 
-    channel.subscribe("joinSpectate", (msg) => {
-      console.log("[MP] Join spectate", msg)
-      mpState.currentRoom = room
-      mpState.spectate = true
+  channel.subscribe("joinSpectate", (msg) => {
+    if (msg.data.username !== username) return
+    clearTimeout(joinTimeout)
+    console.log("[MP] Join spectate", msg)
+    mpState.currentRoom = room
+    mpState.spectate = true
+
+    channel.subscribe('startGame', (msg) => {
+      console.log("[MP] Start game", msg)
+      mpState.gameStarted = true
+    })
+
+    channel.subscribe('gameUpdate', (msg) => {
+      console.log("[MP] Game update", msg)
+      if (!mpState.gameStarted) mpState.gameStarted = true
+      //Update game state
+      gameState.xIsNext = msg.data.xIsNext
+      gameState.nextGrid = msg.data.nextGrid
+      gameState.hoveredGrid = msg.data.hoveredGrid
+      gameState.wins = msg.data.wins
+      gameState.winner = msg.data.winner
+      gameState.history = msg.data.history
+      //Assign each row to grid data to get around the const issue
+      gridData.forEach((row, i) => row.splice(0, row.length, ...msg.data.gridData[i]))
+      gameState.inputAllowed = !mpState.spectate && (IAmHost.value ? gameState.xIsNext : !gameState.xIsNext)
     })
   })
 }
@@ -240,15 +274,18 @@ const handleClick = (grid: number, pos: number) => {
       <h1>
         Room code: {{ mpState.currentRoom }}
       </h1>
-      [HOST] {{ mpState.host }}{{ IAmHost ? "(YOU)" : "" }}
+      [HOST] {{ mpState.host }}{{ IAmHost && !mpState.spectate ? "(YOU)" : "" }}
       VS
-      {{ mpState.opponent || "???" }}{{ !IAmHost ? "(YOU)" : "" }}
+      {{ mpState.opponent || "???" }}{{ !IAmHost && !mpState.spectate ? "(YOU)" : "" }}
+
 
       <div class="button" @click="startGame()" v-if="mpState.opponent && IAmHost">Start game</div>
       <div v-else>Waiting for host to start game...</div>
+      <div v-if="mpState.spectate">You are spectating the match</div>
     </div>
     <div v-else-if="mpState.currentRoom && mpState.gameStarted">
       <MainTable @clicked="handleClick" :grid-data="gridData" :state="gameState" />
+      <div v-if="mpState.spectate">Spectating</div>
     </div>
     <div v-else>
       <h1>Multiplayer</h1>
