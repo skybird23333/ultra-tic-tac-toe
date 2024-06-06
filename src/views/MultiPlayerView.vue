@@ -45,6 +45,20 @@ ably.connection.once("closed", () => {
   mpState.connected = false
 })
 
+const publishGameUpdate = () => {
+  const channel = ably.channels.get(mpState.currentRoom)
+  channel.publish("gameUpdate", {
+    xIsNext: gameState.xIsNext,
+    nextGrid: gameState.nextGrid,
+    hoveredGrid: gameState.hoveredGrid,
+    wins: gameState.wins,
+    winner: gameState.winner,
+    history: gameState.history,
+    gridData: gridData,
+    timer: timer
+  })
+}
+
 /**
  * HOW MULTIPLAYER WORKS
  * Multiplayer is based on host/peer. Host can create a room which gets a random room code. Peer joins with that room code.
@@ -59,17 +73,13 @@ const createRoom = async () => {
     console.log("[MP] Join request", msg)
 
     if (mpState.opponent) {
-      channel.publish("joinSpectate", { username: msg.data.username })
+      channel.publish("joinSpectate", {
+        username: msg.data.username,
+        host: mpState.host,
+        opponent: mpState.opponent
+      })
       if (mpState.gameStarted) {
-        channel.publish("gameUpdate", {
-          xIsNext: gameState.xIsNext,
-          nextGrid: gameState.nextGrid,
-          hoveredGrid: gameState.hoveredGrid,
-          wins: gameState.wins,
-          winner: gameState.winner,
-          history: gameState.history,
-          gridData: gridData
-        })
+        publishGameUpdate()
       }
       console.log("[MP] Join spectate sent")
       return
@@ -144,6 +154,9 @@ const joinRoom = () => {
       //Assign each row to grid data to get around the const issue
       gridData.forEach((row, i) => row.splice(0, row.length, ...msg.data.gridData[i]))
       gameState.inputAllowed = !mpState.spectate && (IAmHost.value ? gameState.xIsNext : !gameState.xIsNext)
+
+      timer.host = msg.data.timer.host
+      timer.opponent = msg.data.timer.opponent
     })
   })
 
@@ -153,6 +166,8 @@ const joinRoom = () => {
     console.log("[MP] Join spectate", msg)
     mpState.currentRoom = room
     mpState.spectate = true
+    mpState.host = msg.data.host
+    mpState.opponent = msg.data.opponent
 
     channel.subscribe('startGame', (msg) => {
       console.log("[MP] Start game", msg)
@@ -172,6 +187,9 @@ const joinRoom = () => {
       //Assign each row to grid data to get around the const issue
       gridData.forEach((row, i) => row.splice(0, row.length, ...msg.data.gridData[i]))
       gameState.inputAllowed = !mpState.spectate && (IAmHost.value ? gameState.xIsNext : !gameState.xIsNext)
+
+      timer.host = msg.data.timer.host
+      timer.opponent = msg.data.timer.opponent
     })
   })
 }
@@ -219,6 +237,21 @@ const gameState = reactive<{
   inputAllowed: false
 })
 
+const timer = reactive({
+  host: 0,
+  opponent: 0
+})
+
+setInterval(() => {
+  if (mpState.gameStarted) {
+    if (gameState.xIsNext) {
+      timer.host += 1
+    } else {
+      timer.opponent += 1
+    }
+  }
+}, 1000)
+
 const handleClick = (grid: number, pos: number) => {
   console.log(gameState.inputAllowed)
   if (IAmHost.value) {
@@ -240,16 +273,7 @@ const handleClick = (grid: number, pos: number) => {
 
     gameState.history.push({ player: gameState.xIsNext ? "O" : "X", grid, pos })
 
-    const channel = ably.channels.get(mpState.currentRoom)
-    channel.publish("gameUpdate", {
-      xIsNext: gameState.xIsNext,
-      nextGrid: gameState.nextGrid,
-      hoveredGrid: gameState.hoveredGrid,
-      wins: gameState.wins,
-      winner: gameState.winner,
-      history: gameState.history,
-      gridData: gridData
-    })
+    publishGameUpdate()
   } else {
     const channel = ably.channels.get(mpState.currentRoom)
     channel.publish("input", {
@@ -284,7 +308,11 @@ const handleClick = (grid: number, pos: number) => {
     </div>
     <div v-else-if="mpState.currentRoom && mpState.gameStarted">
       <MainTable @clicked="handleClick" :grid-data="gridData" :state="gameState" />
-      <div v-if="mpState.spectate">Spectating</div>
+      <span v-if="mpState.spectate">Spectating -</span>
+      [X]{{ mpState.host }} {{ Math.floor(timer.host / 60) }}:{{ (timer.host % 60).toString().padStart(2, "0") }} -
+      {{ Math.floor(timer.opponent / 60) }}:{{ (timer.opponent % 60).toString().padStart(2, "0") }} {{ mpState.opponent
+      }}
+      [O]
     </div>
     <div v-else>
       <h1>Multiplayer</h1>
