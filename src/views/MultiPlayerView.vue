@@ -309,7 +309,7 @@ const handleClick = (grid: number, pos: number) => {
     <div v-else-if="mpState.currentRoom && mpState.gameStarted">
       <MainTable @clicked="handleClick" :grid-data="gridData" :state="gameState" />
       <span v-if="mpState.spectate">Spectating -</span>
-      [X]{{ mpState.host }} {{ Math.floor(timer.host / 60) }}:{{ (timer.host % 60).toString().padStart(2, "0") }} -
+      [X] {{ mpState.host }} {{ Math.floor(timer.host / 60) }}:{{ (timer.host % 60).toString().padStart(2, "0") }} -
       {{ Math.floor(timer.opponent / 60) }}:{{ (timer.opponent % 60).toString().padStart(2, "0") }} {{ mpState.opponent
       }}
       [O]
