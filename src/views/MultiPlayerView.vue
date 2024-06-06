@@ -50,12 +50,26 @@ const publishGameUpdate = () => {
   channel.publish("gameUpdate", {
     xIsNext: gameState.xIsNext,
     nextGrid: gameState.nextGrid,
-    hoveredGrid: gameState.hoveredGrid,
     wins: gameState.wins,
     winner: gameState.winner,
     history: gameState.history,
     gridData: gridData,
     timer: timer
+  })
+}
+
+const registerStartGame = () => {
+  // Publish hovered on change
+  const channel = ably.channels.get(mpState.currentRoom)
+  watch(() => gameState.hovered, () => {
+    channel.publish("hovered", { grid: gameState.hovered[0], pos: gameState.hovered[1], username })
+    console.log('[MP] Hovered sent', gameState.hovered)
+  })
+
+  channel.subscribe("hovered", (msg) => {
+    console.log('[MP] Hovered received', msg)
+    if (msg.data.username === username) return
+    gameState.opponentHovered = [msg.data.grid, msg.data.pos]
   })
 }
 
@@ -140,6 +154,7 @@ const joinRoom = () => {
     channel.subscribe('startGame', (msg) => {
       console.log("[MP] Start game", msg)
       mpState.gameStarted = true
+      registerStartGame()
     })
 
     channel.subscribe('gameUpdate', (msg) => {
@@ -147,7 +162,6 @@ const joinRoom = () => {
       //Update game state
       gameState.xIsNext = msg.data.xIsNext
       gameState.nextGrid = msg.data.nextGrid
-      gameState.hoveredGrid = msg.data.hoveredGrid
       gameState.wins = msg.data.wins
       gameState.winner = msg.data.winner
       gameState.history = msg.data.history
@@ -172,6 +186,7 @@ const joinRoom = () => {
     channel.subscribe('startGame', (msg) => {
       console.log("[MP] Start game", msg)
       mpState.gameStarted = true
+      registerStartGame()
     })
 
     channel.subscribe('gameUpdate', (msg) => {
@@ -180,7 +195,6 @@ const joinRoom = () => {
       //Update game state
       gameState.xIsNext = msg.data.xIsNext
       gameState.nextGrid = msg.data.nextGrid
-      gameState.hoveredGrid = msg.data.hoveredGrid
       gameState.wins = msg.data.wins
       gameState.winner = msg.data.winner
       gameState.history = msg.data.history
@@ -213,6 +227,8 @@ const startGame = () => {
   })
 
   gameState.inputAllowed = true
+
+  registerStartGame()
 }
 
 const IAmHost = computed(() => mpState.host === username)
@@ -222,7 +238,8 @@ const gridData = reactive(Array(9).fill(0).map(() => Array(9).fill(undefined)))
 const gameState = reactive<{
   xIsNext: boolean
   nextGrid: number
-  hoveredGrid: number
+  hovered: [number, number]
+  opponentHovered: [number, number]
   wins: (string | '')[]
   winner: string
   history: { player: string, grid: number, pos: number }[]
@@ -230,7 +247,8 @@ const gameState = reactive<{
 }>({
   xIsNext: true,
   nextGrid: -1,
-  hoveredGrid: -1,
+  hovered: [-1, -1],
+  opponentHovered: [-1, -1],
   wins: Array(9).fill(''),
   winner: '',
   history: [],
@@ -263,7 +281,7 @@ const handleClick = (grid: number, pos: number) => {
     gridData[grid][pos] = gameState.xIsNext ? "X" : "O"
     gameState.xIsNext = !gameState.xIsNext
     gameState.nextGrid = gameState.wins[pos] ? -1 : pos
-    gameState.hoveredGrid = -1
+    gameState.hovered = [0, 0]
     const winner = calculateWinner(gridData[grid]) //Check winner for smaller grids
     if (winner) gameState.wins[grid] = winner
     if (gameState.wins[gameState.nextGrid]) gameState.nextGrid = -1 //If last move in a capture is in the captured grid, opponent gets to choose anywhere

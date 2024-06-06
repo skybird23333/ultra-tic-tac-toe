@@ -7,7 +7,8 @@ const { state, gridData } = defineProps<{
     state: {
         xIsNext: boolean
         nextGrid: number
-        hoveredGrid: number
+        hovered: [number, number]
+        opponentHovered: [number, number]
         wins: (string | '')[]
         winner: string
         history: { player: string, grid: number, pos: number }[]
@@ -43,10 +44,11 @@ const handleClick = (grid: number, pos: number) => {
                     <td v-for="j in [0, 1, 2]" key="j">
                         <SmallTable :grid="gridData[i * 3 + j]"
                             @clicked="(pos: number) => (handleClick(i * 3 + j, pos))"
-                            @hovered="(pos: number) => { state.hoveredGrid = pos }"
+                            @hovered="(pos: number) => { state.hovered = [i * 3 + j, pos] }"
                             :isActive="state.inputAllowed && !state.winner && (state.nextGrid == -1 || state.nextGrid == i * 3 + j)"
-                            :isHovered="state.hoveredGrid == i * 3 + j" :winner="state.wins[i * 3 + j]"
-                            :lastMove="(state.history[state.history.length - 1]?.grid == i * 3 + j) ? state.history[state.history.length - 1]?.pos : undefined">
+                            :isHovered="state.hovered[1] == i * 3 + j" :winner="state.wins[i * 3 + j]"
+                            :lastMove="(state.history[state.history.length - 1]?.grid == i * 3 + j) ? state.history[state.history.length - 1]?.pos : undefined"
+                            :opponentHoverPos="state.opponentHovered[0] == i * 3 + j ? state.opponentHovered[1] : undefined">
                         </SmallTable>
                     </td>
                 </tr>

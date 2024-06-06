@@ -7,7 +7,7 @@ const emit = defineEmits<{
     (e: 'hovered', pos: number): void
 }>()
 
-const { grid, isActive, isHovered, winner, lastMove } = defineProps(['grid', 'isActive', 'isHovered', 'winner', 'lastMove'])
+const { grid, isActive, isHovered, winner, lastMove, opponentHoverPos } = defineProps(['grid', 'isActive', 'isHovered', 'winner', 'lastMove', 'opponentHoverPos'])
 
 
 const handleClick = (pos: number) => {
@@ -38,7 +38,8 @@ const handleHover = (pos: number) => {
                     <td v-for="j in [0, 1, 2]" key="j" @click="handleClick(i * 3 + j)"
                         @mouseenter="handleHover(i * 3 + j)" @mouseleave="emit('hovered', -1)" :class="{
                 disabled: grid[i * 3 + j] || !isActive || winner,
-                last: lastMove === i * 3 + j
+                last: lastMove === i * 3 + j,
+                opHover: opponentHoverPos === i * 3 + j
             }">
                         {{ grid[i * 3 + j] }}
                     </td>
@@ -146,6 +147,10 @@ const handleHover = (pos: number) => {
     td:active {
         background-color: #222;
         border: 1px solid #555;
+    }
+
+    td.opHover {
+        background-color: rgba(255, 0, 0, 0.2);
     }
 }
 </style>
