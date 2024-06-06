@@ -3,7 +3,6 @@ import MainTable from "@/components/MainTable.vue"
 import { computed, reactive, toRefs, watch } from "vue";
 import Ably from 'ably'
 import { calculateWinner, generateUsername } from '@/helpers'
-import { clear } from "console";
 //Sorry i cant be bothered to separate the networking
 
 const username = generateUsername()
