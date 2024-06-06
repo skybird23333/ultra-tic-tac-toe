@@ -63,11 +63,9 @@ const registerStartGame = () => {
   const channel = ably.channels.get(mpState.currentRoom)
   watch(() => gameState.hovered, () => {
     channel.publish("hovered", { grid: gameState.hovered[0], pos: gameState.hovered[1], username })
-    console.log('[MP] Hovered sent', gameState.hovered)
   })
 
   channel.subscribe("hovered", (msg) => {
-    console.log('[MP] Hovered received', msg)
     if (msg.data.username === username) return
     gameState.opponentHovered = [msg.data.grid, msg.data.pos]
   })
