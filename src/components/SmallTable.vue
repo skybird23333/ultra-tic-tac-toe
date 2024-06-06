@@ -68,7 +68,8 @@ const handleHover = (pos: number) => {
 .tutorial-text {
     width: 120px;
     color: #fff;
-    background: gray;
+    background: rgba(128, 128, 128, 0.2);
+    backdrop-filter: blur(2px);
     text-align: center;
     border-radius: 6px;
     padding: 5px 0;
@@ -80,12 +81,12 @@ const handleHover = (pos: number) => {
 }
 
 .tutorial-text.warn {
-    background: darkgoldenrod;
+    background: rgba(184, 135, 11, 0.2);
 }
 
 .winner-text {
     width: 120px;
-    color: white;
+    color: rgba(255, 255, 255, 0.5);
     font-size: 128px;
     text-align: center;
     font-weight: lighter;
