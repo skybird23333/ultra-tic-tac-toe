@@ -2,19 +2,10 @@
 import MainTable from "@/components/MainTable.vue"
 import { calculateWinner } from "@/helpers";
 import { reactive } from "vue";
-
+import { GameState } from "@/types";
 const gridData = reactive(Array(9).fill(0).map(() => Array(9).fill(undefined)))
 
-const state = reactive<{
-  xIsNext: boolean
-  nextGrid: number
-  hovered: [number, number]
-  opponentHovered: [number, number]
-  wins: (string | '')[]
-  winner: string
-  history: { player: string, grid: number, pos: number }[]
-  inputAllowed: boolean
-}>({
+const state = reactive<GameState>({
   xIsNext: true,
   nextGrid: -1,
   hovered: [-1, -1],
@@ -22,7 +13,7 @@ const state = reactive<{
   wins: Array(9).fill(''),
   winner: '',
   history: [],
-  inputAllowed: false
+  inputAllowed: true
 })
 
 const handleClick = (grid: number, pos: number) => {

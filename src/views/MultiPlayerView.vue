@@ -3,6 +3,7 @@ import MainTable from "@/components/MainTable.vue"
 import { computed, reactive, toRefs, watch } from "vue";
 import Ably from 'ably'
 import { calculateWinner, generateUsername } from '@/helpers'
+import type { GameState } from "@/types";
 //Sorry i cant be bothered to separate the networking
 
 const username = generateUsername()
@@ -233,16 +234,7 @@ const IAmHost = computed(() => mpState.host === username)
 
 const gridData = reactive(Array(9).fill(0).map(() => Array(9).fill(undefined)))
 
-const gameState = reactive<{
-  xIsNext: boolean
-  nextGrid: number
-  hovered: [number, number]
-  opponentHovered: [number, number]
-  wins: (string | '')[]
-  winner: string
-  history: { player: string, grid: number, pos: number }[]
-  inputAllowed: boolean
-}>({
+const gameState = reactive<GameState>({
   xIsNext: true,
   nextGrid: -1,
   hovered: [-1, -1],
