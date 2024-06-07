@@ -328,7 +328,7 @@ const handleClick = (grid: number, pos: number) => {
       [X] {{ mpState.host }} {{ Math.floor(timer.host / 60) }}:{{ (timer.host % 60).toString().padStart(2, "0") }} -
       {{ Math.floor(timer.opponent / 60) }}:{{ (timer.opponent % 60).toString().padStart(2, "0") }} {{ mpState.opponent
       }}
-      [O]
+      [O] - {{ mpState.currentRoom }}
     </div>
     <div v-else>
       <h1>Multiplayer</h1>
